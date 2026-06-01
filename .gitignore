@@ -30,3 +30,15 @@ npm-debug.log*
 .fseventsd
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+
+# Supabase
+.supabase/
+supabase/.temp
+
+# Vercel
+.vercel/
+
+# Environment
+.env
+.env.local
+.env.production

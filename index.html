@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🎮 小创客冒险之旅</title>
+<link rel="stylesheet" href="css/styles.css">
 <style>
 /* ==================== VARIABLES ==================== */
 :root {
@@ -225,6 +226,8 @@ kbd{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border
         <div class="stat">🏆 成就 <span class="n" id="badges">0</span>/10</div>
         <div class="stat">📁 作品 <span class="n" id="works">0</span></div>
         <div class="stat"><button class="qbtn" onclick="refreshAll()" style="padding:4px 10px;font-size:.8em">🔄 刷新验证</button></div>
+        <div class="stat"><button class="qbtn" onclick="Friends.showFriendModal()" style="padding:4px 10px;font-size:.8em">👥 好友</button></div>
+        <div class="stat"><button class="qbtn" onclick="Leaderboard.showModal()" style="padding:4px 10px;font-size:.8em">🏆 排行</button></div>
         <div class="stat"><button class="qbtn" id="soundBtn" onclick="toggleSound()" style="padding:4px 10px;font-size:.8em" title="开关音效">🔊 音效</button></div>
     </div>
 </div>
@@ -928,6 +931,9 @@ function toggleStepDone(lid,si){
     saveS();
     selectLevel(lid);
     if(S.steps[k]){showToastI('✅','步骤完成！');sndStepDone();sndXpUp();}
+    // 同步到云端
+    Sync.saveStepStatus(lid, si, S.steps[k]);
+    Sync.debouncedSave();
 }
 
 function completeLvl(id){
@@ -935,6 +941,9 @@ function completeLvl(id){
     if(S.done[id]){delete S.done[id];S.xp-=l.xp}
     else{S.done[id]=true;S.xp+=l.xp;sndLevelDone();showToastI('🎉',`完成！获得 ${l.xp} XP`);fireConfetti();setTimeout(sndXpUp,400)}
     saveS();selectLevel(id);updateStats();
+    // 同步到云端
+    Sync.saveLevelStatus(id, !!S.done[id]);
+    Sync.debouncedSave();
 }
 
 function copyCode(btn){
@@ -1138,6 +1147,32 @@ renderMap();updateStats();
 // auto-verify on load (silent)
 setTimeout(()=>{for(let i=1;i<=10;i++)verifyLevel(i)},500);
 
+// ==================== CLOUD INIT ====================
+async function initApp() {
+    const status = await Auth.init();
+
+    if (status === 'needs_migration') {
+        // 有本地数据，提示登录并迁移
+        Auth.showAuthModal(true);
+    } else if (status === 'needs_setup') {
+        // 全新用户
+        Auth.showAuthModal(false);
+    } else if (status === 'offline') {
+        // 离线模式，继续使用 localStorage
+        console.log('Running in offline mode');
+    }
+
+    if (Auth.isLoggedIn()) {
+        // 从云端同步数据
+        await Sync.syncFromCloud();
+        Auth.updateUI();
+        Auth.updateActivity();
+    }
+}
+
+// 页面加载后初始化
+initApp();
+
 // 按钮悬停音效（仅对.qbtn和.done-btn生效，限制触发频率）
 let hoverCooldown = false;
 document.addEventListener('mouseover', function(e) {
@@ -1158,5 +1193,17 @@ document.addEventListener('click', function playWelcomeOnce() {
     document.removeEventListener('click', playWelcomeOnce);
 }, { once: true });
 </script>
+
+<!-- Supabase CDN (使用固定版本确保稳定性) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+
+<!-- 应用模块 -->
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/friends.js"></script>
+<script src="js/pk.js"></script>
+<script src="js/leaderboard.js"></script>
+
 </body>
 </html>

@@ -1,0 +1,14 @@
+{
+  "name": "kids-creator-hub",
+  "version": "2.0.0",
+  "description": "🎮 小创客冒险之旅 - 像玩游戏一样学编程",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "verify": "node verify.js",
+    "verify:serve": "node verify.js serve"
+  },
+  "keywords": ["education", "kids", "programming", "scratch", "python"],
+  "author": "小开发者",
+  "license": "MIT"
+}
