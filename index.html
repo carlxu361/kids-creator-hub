@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 小创客冒险之旅</title>
+<style>
+/* ==================== VARIABLES ==================== */
+:root {
+    --primary:#6c5ce7;--success:#00b894;--warning:#fdcb6e;--danger:#e17055;--info:#74b9ff;
+    --bg:#0a0a23;--card:#1a1a3e;--card2:#12122e;--text:#f5f5f5;--dim:#8888aa;
+    --glow:rgba(108,92,231,.3);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ==================== STARS ==================== */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--d) ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.2;transform:scale(.8)}to{opacity:1;transform:scale(1.2)}}
+
+/* ==================== TOP BAR ==================== */
+.top-bar{position:sticky;top:0;z-index:100;background:rgba(10,10,35,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(108,92,231,.25);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top-bar .logo{font-size:1.25em;font-weight:700;background:linear-gradient(135deg,#a29bfe,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat{display:flex;align-items:center;gap:5px;font-size:.88em;color:var(--dim)}
+.stat .n{color:var(--warning);font-weight:700;font-size:1.05em}
+
+/* XP BAR */
+.xp-wrap{padding:0 20px}
+.xp-bar{height:7px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,#6c5ce7,#a29bfe,#fd79a8);border-radius:4px;transition:width .8s;position:relative}
+.xp-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 2s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.xp-label{text-align:right;font-size:.75em;color:var(--dim);margin-top:3px}
+
+/* ==================== LAYOUT ==================== */
+.main{position:relative;z-index:1;display:flex;min-height:calc(100vh - 70px)}
+
+/* LEFT MAP */
+.map{width:300px;min-width:300px;padding:14px;overflow-y:auto;max-height:calc(100vh - 70px);position:sticky;top:70px}
+.map::-webkit-scrollbar{width:4px}.map::-webkit-scrollbar-thumb{background:rgba(108,92,231,.4);border-radius:2px}
+
+.lvl{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:6px;border-radius:12px;cursor:pointer;transition:all .25s;border:2px solid transparent;position:relative}
+.lvl:hover{background:rgba(108,92,231,.12);transform:translateX(3px)}
+.lvl.on{background:rgba(108,92,231,.18);border-color:var(--primary);box-shadow:0 0 16px var(--glow)}
+.lvl .ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4em;flex-shrink:0;position:relative}
+.lvl .badge{position:absolute;top:-3px;right:-3px;width:20px;height:20px;background:var(--success);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65em;border:2px solid var(--bg);animation:pop .35s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.lvl .info{flex:1;min-width:0}
+.lvl .t{font-weight:600;font-size:.95em;margin-bottom:2px}
+.lvl .s{font-size:.78em;color:var(--dim)}
+.lvl::before{content:'';position:absolute;left:37px;top:-6px;width:2px;height:6px;background:rgba(108,92,231,.3)}
+.lvl:first-child::before{display:none}
+
+/* auto-verify indicator */
+.lvl .verify-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lvl .verify-dot.ok{background:var(--success);box-shadow:0 0 6px var(--success)}
+.lvl .verify-dot.partial{background:var(--warning)}
+.lvl .verify-dot.none{background:rgba(255,255,255,.15)}
+
+/* RIGHT CONTENT */
+.content{flex:1;padding:20px 28px;overflow-y:auto;max-height:calc(100vh - 70px)}
+.content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(108,92,231,.4);border-radius:3px}
+
+/* level header */
+.hdr{margin-bottom:24px;animation:slideUp .4s}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.hdr .bc{font-size:.82em;color:var(--dim);margin-bottom:6px}
+.hdr h1{font-size:1.8em;margin-bottom:8px;background:linear-gradient(135deg,#a29bfe,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr .desc{font-size:1em;color:var(--dim);line-height:1.7;margin-bottom:12px}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:16px;font-size:.82em;background:rgba(255,255,255,.07);color:var(--dim)}
+
+/* section titles */
+.sec{margin-bottom:24px;animation:slideUp .4s}
+.sec-t{font-size:1.15em;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* ==================== STEP CARDS ==================== */
+.step{background:var(--card);border-radius:12px;margin-bottom:10px;overflow:hidden;border:1px solid rgba(255,255,255,.05);transition:all .25s}
+.step:hover{border-color:rgba(108,92,231,.25)}
+.step.done{border-color:rgba(0,184,148,.25)}
+.step-h{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;user-select:none}
+.step-chk{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;flex-shrink:0;font-size:.82em}
+.step-chk:hover{border-color:var(--success);background:rgba(0,184,148,.1)}
+.step-chk.auto-ok{background:var(--success);border-color:var(--success);animation:pop .3s}
+.step-chk.manual-ok{background:var(--info);border-color:var(--info)}
+.step-num{width:28px;height:28px;border-radius:7px;background:rgba(108,92,231,.18);display:flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;color:#a29bfe;flex-shrink:0}
+.step-t{flex:1;font-weight:500}
+.step-tag{font-size:.72em;padding:2px 8px;border-radius:8px;flex-shrink:0}
+.step-tag.auto{background:rgba(0,184,148,.15);color:var(--success)}
+.step-tag.manual{background:rgba(116,185,255,.15);color:var(--info)}
+.step-arrow{color:var(--dim);transition:transform .25s;font-size:.75em}
+.step.expanded .step-arrow{transform:rotate(90deg)}
+.step-b{display:none;padding:0 16px 16px 74px;line-height:1.8;color:var(--dim);font-size:.93em}
+.step.expanded .step-b{display:block;animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.step-b p{margin-bottom:8px}
+
+/* verify bar inside step */
+.verify-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card2);border-radius:8px;margin:10px 0;font-size:.88em}
+.verify-bar .v-icon{font-size:1.1em}
+.verify-bar .v-text{flex:1}
+.verify-bar .v-btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:.82em;transition:all .2s}
+.verify-bar .v-btn.check{background:rgba(108,92,231,.2);color:#a29bfe}
+.verify-bar .v-btn.check:hover{background:rgba(108,92,231,.35)}
+.verify-bar.ok{background:rgba(0,184,148,.1);border:1px solid rgba(0,184,148,.2)}
+.verify-bar.fail{background:rgba(225,112,85,.1);border:1px solid rgba(225,112,85,.2)}
+.verify-bar.pending{background:rgba(253,203,110,.1);border:1px solid rgba(253,203,110,.2)}
+
+/* code blocks */
+.code{background:#0d0d2b;border-radius:10px;padding:14px 16px;margin:10px 0;font-family:"SF Mono","Fira Code",Menlo,monospace;font-size:.87em;line-height:1.7;overflow-x:auto;position:relative;border:1px solid rgba(108,92,231,.18)}
+.code .lbl{position:absolute;top:7px;right:10px;font-size:.72em;color:var(--dim);background:rgba(108,92,231,.18);padding:2px 7px;border-radius:4px}
+.code .cp{position:absolute;top:7px;right:70px;background:rgba(255,255,255,.08);border:none;color:var(--dim);padding:3px 9px;border-radius:5px;cursor:pointer;font-size:.72em;transition:all .2s}
+.code .cp:hover{background:rgba(108,92,231,.35);color:#fff}
+
+/* tip boxes */
+.tip{background:rgba(116,185,255,.08);border-left:3px solid var(--info);border-radius:0 8px 8px 0;padding:12px 14px;margin:10px 0;font-size:.88em}
+.tip.warn{background:rgba(253,203,110,.08);border-color:var(--warning)}
+.tip.ok{background:rgba(0,184,148,.08);border-color:var(--success)}
+
+/* AI hint */
+.ai{background:linear-gradient(135deg,rgba(108,92,231,.12),rgba(253,121,168,.12));border-radius:10px;padding:14px 16px;margin:10px 0;display:flex;gap:10px;align-items:flex-start}
+.ai .ai-i{font-size:1.2em;flex-shrink:0}
+.ai .ai-t{font-size:.88em;color:var(--dim);line-height:1.6}
+.ai .ai-t strong{color:#a29bfe}
+
+/* quick buttons */
+.qbtns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.qbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;background:rgba(108,92,231,.12);border:1px solid rgba(108,92,231,.25);color:#a29bfe;cursor:pointer;font-size:.87em;transition:all .2s;text-decoration:none}
+.qbtn:hover{background:rgba(108,92,231,.28);transform:translateY(-2px)}
+.qbtn.pri{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;border:none}
+
+/* ==================== ANIMATED DEMOS ==================== */
+.demo{background:var(--card2);border-radius:12px;padding:18px;margin:12px 0;overflow:hidden;position:relative}
+.demo-title{font-size:.9em;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.demo-stage{position:relative;height:200px;background:rgba(0,0,0,.3);border-radius:8px;overflow:hidden}
+
+/* scratch demo */
+.scratch-demo{position:relative;width:100%;height:100%}
+.scratch-cat{position:absolute;bottom:30px;left:50px;font-size:2.5em;transition:all .5s ease-in-out}
+.scratch-ball{position:absolute;top:10px;font-size:1.8em;transition:all .05s linear}
+.scratch-score{position:absolute;top:8px;right:12px;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:6px;font-size:.85em}
+.scratch-blocks{position:absolute;bottom:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap}
+.scratch-block{padding:3px 8px;border-radius:4px;font-size:.65em;font-weight:600}
+.sb-event{background:#e8a000;color:#fff}
+.sb-motion{background:#4c97ff;color:#fff}
+.sb-control{background:#ffab19;color:#fff}
+.sb-looks{background:#9966ff;color:#fff}
+
+/* terminal demo */
+.term-demo{font-family:"SF Mono",Menlo,monospace;font-size:.82em;padding:12px}
+.term-line{opacity:0;animation:typeIn .3s forwards;margin-bottom:4px}
+.term-line .prompt{color:var(--success)}
+.term-line .cmd{color:#fff}
+.term-line .out{color:var(--dim)}
+@keyframes typeIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+
+/* python turtle demo */
+.turtle-demo{position:relative;width:100%;height:100%}
+.turtle-canvas{position:absolute;inset:0}
+.turtle-path{stroke:var(--primary);stroke-width:2;fill:none;stroke-dasharray:1000;stroke-dashoffset:1000;animation:drawPath 3s ease forwards}
+@keyframes drawPath{to{stroke-dashoffset:0}}
+.turtle-dot{position:absolute;width:12px;height:12px;border-radius:50%;animation:pop .5s ease forwards;opacity:0}
+.turtle-dot:nth-child(2){animation-delay:.5s}.turtle-dot:nth-child(3){animation-delay:1s}
+.turtle-dot:nth-child(4){animation-delay:1.5s}.turtle-dot:nth-child(5){animation-delay:2s}
+.turtle-dot:nth-child(6){animation-delay:2.5s}
+
+/* ==================== MULTIDISCIPLINARY BADGE ==================== */
+.subject{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:.75em;margin:2px}
+.subject.math{background:rgba(116,185,255,.15);color:var(--info)}
+.subject.chinese{background:rgba(253,121,168,.15);color:#fd79a8}
+.subject.english{background:rgba(108,92,231,.15);color:#a29bfe}
+.subject.science{background:rgba(0,184,148,.15);color:var(--success)}
+.subject.art{background:rgba(253,203,110,.15);color:var(--warning)}
+
+/* ==================== COMPLETE BTN ==================== */
+.done-sec{text-align:center;padding:24px;margin-top:16px}
+.done-btn{padding:14px 36px;border-radius:12px;background:linear-gradient(135deg,#00b894,#00cec9);color:#fff;border:none;font-size:1.05em;font-weight:600;cursor:pointer;transition:all .25s;box-shadow:0 4px 14px rgba(0,184,148,.3)}
+.done-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,184,148,.35)}
+.done-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.done-btn.completed{background:linear-gradient(135deg,#636e72,#b2bec3)}
+
+/* TOAST */
+.toast{position:fixed;top:80px;right:20px;background:var(--card);border:1px solid rgba(0,184,148,.35);border-radius:10px;padding:14px 20px;z-index:200;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translateX(130%);transition:transform .35s}
+.toast.show{transform:translateX(0)}
+
+/* CONFETTI */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:300}
+.c-piece{position:absolute;top:-10px;animation:cFall var(--d) linear forwards}
+@keyframes cFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+/* WELCOME */
+.welcome{text-align:center;padding:50px 30px;animation:slideUp .5s}
+.welcome h1{font-size:2.2em;margin-bottom:12px;background:linear-gradient(135deg,#a29bfe,#fd79a8,#fdcb6e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome p{font-size:1.05em;color:var(--dim);line-height:1.8;max-width:560px;margin:0 auto 24px}
+.welcome .go{padding:16px 44px;border-radius:14px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;border:none;font-size:1.1em;font-weight:600;cursor:pointer;transition:all .25s;box-shadow:0 4px 18px rgba(108,92,231,.35)}
+.welcome .go:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(108,92,231,.4)}
+.float-emoji{font-size:5em;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* kbd */
+kbd{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:1px 6px;font-size:.85em;font-family:inherit}
+
+/* responsive */
+@media(max-width:900px){
+    .main{flex-direction:column}
+    .map{width:100%;min-width:unset;max-height:180px;position:relative;top:0;display:flex;overflow-x:auto;gap:6px;padding:10px}
+    .lvl{min-width:180px;margin-bottom:0}.lvl::before{display:none}
+    .content{max-height:unset;padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="confetti" id="confetti"></div>
+<div class="toast" id="toast"><span id="toastI">🎉</span><span id="toastT"></span></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div class="logo">🎮 小创客冒险之旅</div>
+    <div class="stats">
+        <div class="stat">⭐ 经验 <span class="n" id="xp">0</span></div>
+        <div class="stat">🏆 成就 <span class="n" id="badges">0</span>/10</div>
+        <div class="stat">📁 作品 <span class="n" id="works">0</span></div>
+        <div class="stat"><button class="qbtn" onclick="refreshAll()" style="padding:4px 10px;font-size:.8em">🔄 刷新验证</button></div>
+        <div class="stat"><button class="qbtn" id="soundBtn" onclick="toggleSound()" style="padding:4px 10px;font-size:.8em" title="开关音效">🔊 音效</button></div>
+    </div>
+</div>
+<div class="xp-wrap">
+    <div class="xp-bar"><div class="xp-fill" id="xpF" style="width:0"></div></div>
+    <div class="xp-label" id="xpL">0 / 5000 XP</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+    <div class="map" id="map"></div>
+    <div class="content" id="content">
+        <div class="welcome">
+            <div class="float-emoji">🚀</div>
+            <h1>欢迎来到小创客冒险之旅！</h1>
+            <p>像玩游戏一样学编程！每完成一个关卡，系统会自动检测你的作品，获得经验值和成就徽章。</p>
+            <button class="go" onclick="selectLevel(1)">🎯 开始第1关</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== LEVEL DATA ====================
+const L = [
+{
+    id:1, icon:'🏠', title:'创客基地搭建', time:'30分钟', difficulty:'入门', xp:100,
+    desc:'认识电脑上所有工具，知道每个工具是干什么的。就像探险家出发前要先认识自己的装备！',
+    subjects:['🖥️ 信息科技'],
+    steps:[
+        {title:'认识终端（Terminal）',auto:true,
+        verify:{id:'v1_terminal',label:'打开过终端并执行过命令',hint:'打开终端，输入 echo "你好" 然后回车'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<p><strong>终端是什么？</strong>终端就像一个"魔法对话框"，你可以用文字命令控制电脑。</p>
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('open -a Terminal')">🚀 打开终端</a></div>
+<p>打开后，试试输入以下命令：</p>
+<div class="code"><span class="lbl">终端</span><button class="cp" onclick="copyCode(this)">复制</button>
+echo "你好，我是小创客！"
+date
+whoami</div>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：在终端输入命令</div>
+    <div class="demo-stage">
+        <div class="term-demo" id="termDemo">
+            <div class="term-line" style="animation-delay:.3s"><span class="prompt">❯ </span><span class="cmd">echo "你好，我是小创客！"</span></div>
+            <div class="term-line" style="animation-delay:.8s"><span class="out">你好，我是小创客！</span></div>
+            <div class="term-line" style="animation-delay:1.3s"><span class="prompt">❯ </span><span class="cmd">date</span></div>
+            <div class="term-line" style="animation-delay:1.8s"><span class="out">2026年 6月 1日 星期日 10时30分00秒 CST</span></div>
+            <div class="term-line" style="animation-delay:2.3s"><span class="prompt">❯ </span><span class="cmd">whoami</span></div>
+            <div class="term-line" style="animation-delay:2.8s"><span class="out">xiaochuangke</span></div>
+        </div>
+    </div>
+</div>
+<div class="ai"><span class="ai-i">🤖</span><div class="ai-t">不懂这些命令？在终端输入 <strong>claude</strong> 启动AI助手，然后问它："echo命令是干什么的？用小学生能懂的话解释"</div></div>
+<div class="sec"><div class="sec-t">📐 数学小知识</div>
+<div class="tip"><strong>坐标系</strong>：电脑屏幕用(x, y)坐标来定位。左上角是(0,0)，向右x增大，向下y增大。这跟你数学课学的坐标系一样！不过数学里y轴是向上的，电脑里是向下的。</div></div>`},
+        {title:'认识VS Code',auto:true,
+        verify:{id:'v1_vscode',label:'VS Code 已安装并可用',hint:'在终端输入 code 打开VS Code'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<p><strong>VS Code是什么？</strong>写代码的"超级笔记本"，全世界数百万程序员都在用！</p>
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('code')">🚀 打开VS Code</a></div>
+<p>打开后，按 <kbd>Cmd</kbd>+<kbd>N</kbd> 新建文件，输入文字后按 <kbd>Cmd</kbd>+<kbd>S</kbd> 保存。</p>
+<div class="sec"><div class="sec-t">🔤 英语小知识</div>
+<div class="tip"><strong>VS Code</strong> 的全称是 <strong>Visual Studio Code</strong>。Visual = 可视化的，Studio = 工作室，Code = 代码。合起来就是"可视化代码工作室"！记住这几个英语单词，以后看英文文档就不怕了。</div></div>`},
+        {title:'探索Scratch',auto:true,
+        verify:{id:'v1_scratch',label:'在Scratch创建过项目',hint:'去 scratch.mit.edu 创建一个项目，保存到电脑'},
+        subjects:['🖥️ 信息科技','🎨 艺术'],
+        content:`
+<p><strong>Scratch</strong>是MIT发明的编程工具，用积木块来写代码，就像搭乐高！</p>
+<div class="qbtns"><a class="qbtn pri" href="https://scratch.mit.edu" target="_blank">🚀 打开Scratch</a></div>
+<p>进去后：</p><p>1. 点击右上角🌍图标，选择"简体中文"</p><p>2. 点击"创建"开始新项目</p><p>3. 看看左边的积木块，拖几个到中间试试</p>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：Scratch界面和积木块</div>
+    <div class="demo-stage">
+        <div class="scratch-demo" id="scratchDemo">
+            <div class="scratch-cat" id="demoCat">🐱</div>
+            <div class="scratch-ball" id="demoBall">⚽</div>
+            <div class="scratch-score" id="demoScore">分数: 0</div>
+            <div class="scratch-blocks">
+                <span class="scratch-block sb-event">当🏁被点击</span>
+                <span class="scratch-block sb-control">重复执行</span>
+                <span class="scratch-block sb-motion">移动10步</span>
+                <span class="scratch-block sb-looks">说"你好！"</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="sec"><div class="sec-t">📐 数学 + 🎨 艺术</div>
+<div class="tip"><strong>角度</strong>：Scratch里"右转15度"用到了角度。一圈是360°，所以右转6次就是一圈。正方形每个角是90°，所以"右转90度"走4次就回到起点。试试用Scratch画一个正方形！</div></div>`},
+        {title:'跟AI打个招呼',auto:true,
+        verify:{id:'v1_claude',label:'Claude Code 可用',hint:'在终端输入 claude 启动AI助手'},
+        subjects:['🖥️ 信息科技','🗣️ 沟通表达'],
+        content:`
+<p><strong>Claude Code</strong>是你的AI编程搭档！</p>
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('claude')">🚀 启动Claude Code</a></div>
+<div class="code"><span class="claude">对话</span><button class="cp" onclick="copyCode(this)">复制</button>
+你好！我是一个11岁的小学生，今天刚学编程，请多多指教！</div>
+<div class="sec"><div class="sec-t">🗣️ 沟通表达技巧</div>
+<div class="tip"><strong>自我介绍</strong>：跟AI聊天时，先介绍自己，AI就能用适合你的语言回答。这跟现实中交朋友一样——先告诉别人你是谁，别人才能更好地跟你交流！练习：写一段3句话的自我介绍。</div></div>
+<div class="tip warn">⚠️ 安全规则：不要把你的真实姓名、学校、地址告诉AI！</div>`},
+        {title:'试试录屏',auto:true,
+        verify:{id:'v1_obs',label:'OBS 已安装',hint:'确认OBS已安装到应用程序'},
+        subjects:['🖥️ 信息科技','🎬 媒体素养'],
+        content:`
+<p><strong>OBS</strong>是免费的录屏软件，可以录下你在电脑上的操作。</p>
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('open -a OBS')">🚀 打开OBS</a></div>
+<p>步骤：点击"来源" → <strong>+</strong> → "屏幕捕获" → "开始录制" → 做一些操作 → "停止录制"</p>
+<div class="sec"><div class="sec-t">🔬 科学小知识</div>
+<div class="tip"><strong>视频是怎么录制的？</strong>录屏软件每秒钟截取屏幕画面30次（叫30帧/秒），然后把这些画面快速播放，就像翻页动画书一样。人眼看到每秒超过24张图片，就会觉得是"动起来"的。这就是电影和视频的原理！</div></div>`}
+    ]
+},
+{
+    id:2, icon:'⌨️', title:'打字小能手', time:'每天15分钟×2周', difficulty:'基础', xp:150,
+    desc:'打字速度达到每分钟20个汉字！打字快了，做什么都更快。',
+    subjects:['🖥️ 信息科技','📝 语文'],
+    steps:[
+        {title:'认识键盘布局',auto:false,
+        verify:{id:'v2_kb',label:'了解键盘布局（人工确认）',hint:'你知道基准键位在哪里吗？'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<p>键盘上的字母不是按ABCD排列的，而是按<strong>使用频率</strong>排列的，叫"QWERTY"布局。</p>
+<p><strong>基准键位</strong>：</p>
+<div class="code">左手：A S D F（食指放在F上，有小凸点）
+右手：J K L ;（食指放在J上，有小凸点）</div>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：手指位置</div>
+    <div class="demo-stage" style="display:flex;align-items:center;justify-content:center">
+        <svg width="380" height="140" viewBox="0 0 380 140">
+            <g fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1">
+                <rect x="10" y="10" width="360" height="50" rx="6"/>
+                <g id="keys"></g>
+            </g>
+            <g id="fingers" font-size="11" fill="#a29bfe" text-anchor="middle">
+                <text x="55" y="95">小指</text><text x="95" y="95">无名</text><text x="135" y="95">中指</text><text x="175" y="95">食指</text>
+                <text x="225" y="95">食指</text><text x="265" y="95">中指</text><text x="305" y="95">无名</text><text x="345" y="95">小指</text>
+                <text x="175" y="115" fill="var(--success)" font-weight="bold">F ⬆</text>
+                <text x="225" y="115" fill="var(--success)" font-weight="bold">J ⬆</text>
+            </g>
+            <g font-size="13" fill="var(--text)" text-anchor="middle">
+                <text x="55" y="40">A</text><text x="95" y="40">S</text><text x="135" y="40">D</text><text x="175" y="40" fill="var(--success)" font-weight="bold">F</text>
+                <text x="225" y="40" fill="var(--success)" font-weight="bold">J</text><text x="265" y="40">K</text><text x="305" y="40">L</text><text x="345" y="40">;</text>
+            </g>
+        </svg>
+    </div>
+</div>
+<div class="sec"><div class="sec-t">📐 数学小知识</div>
+<div class="tip"><strong>排列组合</strong>：键盘有26个英文字母。如果按ABCD排列，只有1种方式。但26个字母的排列方式有 26!（26的阶乘）= 403291461126605635584000000 种！QWERTY布局是其中最高效的一种。</div></div>`},
+        {title:'每天练习打字',auto:false,
+        verify:{id:'v2_practice',label:'完成打字练习（人工确认）',hint:'每天练习10分钟，坚持2周'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<div class="qbtns">
+    <a class="qbtn pri" href="https://www.typingclub.com" target="_blank">🎯 TypingClub</a>
+    <a class="qbtn" href="https://typeracer.com" target="_blank">🏁 TypeRacer</a>
+</div>
+<div class="tip">💡 不要看键盘！即使打错了也要继续，慢慢就会好了。</div>`},
+        {title:'给AI写自我介绍',auto:true,
+        verify:{id:'v2_ai_intro',label:'有自我介绍文件（≥80字）',hint:'在作品集文件夹创建"自我介绍.txt"，写80字以上'},
+        subjects:['📝 语文','🗣️ 沟通表达'],
+        content:`
+<p>在 <code>~/kids-creator-hub/作品集/</code> 文件夹创建 <code>自我介绍.txt</code>：</p>
+<div class="code"><span class="lbl">示例</span>
+你好！我叫小明，我今年11岁，上五年级。
+我喜欢编程和画画。
+我最近在学Scratch，已经会做接球游戏了。
+我的目标是做一个完整的游戏给同学们玩！
+请多多指教！</div>
+<div class="sec"><div class="sec-t">📝 语文小知识</div>
+<div class="tip"><strong>自我介绍的结构</strong>：①基本信息（姓名、年龄）②兴趣爱好 ③正在做的事 ④目标/愿望。写作文也一样，要有开头、中间、结尾，条理清晰才能让人读懂。</div></div>`},
+        {title:'打字速度达标',auto:false,
+        verify:{id:'v2_speed',label:'打字速度达标（人工确认）',hint:'你能流畅打出一段话，不用一直看键盘吗？'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<p>用TypeRacer测试你的打字速度：</p>
+<div class="qbtns"><a class="qbtn pri" href="https://typeracer.com" target="_blank">🏁 去比赛</a></div>
+<p>目标：每分钟20个汉字（约40个字符）</p>`}
+    ]
+},
+{
+    id:3, icon:'🐱', title:'第一个Scratch游戏', time:'周末2-3小时', difficulty:'基础', xp:200,
+    desc:'用Scratch做一个能玩的小游戏！不需要写代码，只需要拖积木块。',
+    subjects:['🖥️ 信息科技','📐 数学','🎨 艺术'],
+    steps:[
+        {title:'打开Scratch并熟悉界面',auto:false,
+        verify:{id:'v3_open',label:'打开过Scratch（人工确认）',hint:'去 scratch.mit.edu 看看'},
+        content:`
+<div class="qbtns"><a class="qbtn pri" href="https://scratch.mit.edu" target="_blank">🚀 打开Scratch</a></div>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：Scratch界面布局</div>
+    <div class="demo-stage" style="display:flex;align-items:center;justify-content:center">
+        <svg width="360" height="180" viewBox="0 0 360 180">
+            <rect x="5" y="5" width="350" height="170" rx="8" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.15)"/>
+            <rect x="10" y="10" width="90" height="160" rx="4" fill="rgba(255,203,110,.1)" stroke="rgba(255,203,110,.3)"/>
+            <text x="55" y="35" text-anchor="middle" fill="var(--warning)" font-size="10">🧩 积木块</text>
+            <text x="55" y="60" text-anchor="middle" fill="var(--dim)" font-size="8">运动</text>
+            <text x="55" y="75" text-anchor="middle" fill="var(--dim)" font-size="8">外观</text>
+            <text x="55" y="90" text-anchor="middle" fill="var(--dim)" font-size="8">声音</text>
+            <text x="55" y="105" text-anchor="middle" fill="var(--dim)" font-size="8">事件</text>
+            <rect x="105" y="10" width="130" height="160" rx="4" fill="rgba(108,92,231,.1)" stroke="rgba(108,92,231,.3)"/>
+            <text x="170" y="35" text-anchor="middle" fill="#a29bfe" font-size="10">📝 脚本区</text>
+            <text x="170" y="80" text-anchor="middle" fill="var(--dim)" font-size="8">把积木拖到这里</text>
+            <text x="170" y="95" text-anchor="middle" fill="var(--dim)" font-size="8">拼接成程序</text>
+            <rect x="240" y="10" width="115" height="90" rx="4" fill="rgba(0,184,148,.1)" stroke="rgba(0,184,148,.3)"/>
+            <text x="297" y="35" text-anchor="middle" fill="var(--success)" font-size="10">🎬 舞台</text>
+            <text x="297" y="70" text-anchor="middle" fill="var(--dim)" font-size="8">看效果的地方</text>
+            <rect x="240" y="105" width="115" height="65" rx="4" fill="rgba(253,121,168,.1)" stroke="rgba(253,121,168,.3)"/>
+            <text x="297" y="125" text-anchor="middle" fill="#fd79a8" font-size="10">🐱 角色</text>
+            <text x="297" y="150" text-anchor="middle" fill="var(--dim)" font-size="8">演员列表</text>
+        </svg>
+    </div>
+</div>`},
+        {title:'让小猫移动',auto:false,
+        verify:{id:'v3_move',label:'让小猫移动过（人工确认）',hint:'拖动积木让小猫动起来'},
+        subjects:['📐 数学'],
+        content:`
+<p>跟着做：</p>
+<p>1. 拖出 <span style="background:#e8a000;padding:2px 6px;border-radius:3px;font-size:.85em">当绿旗被点击</span>（事件分类）</p>
+<p>2. 拼上 <span style="background:#4c97ff;padding:2px 6px;border-radius:3px;font-size:.85em">移动10步</span>（运动分类）</p>
+<p>3. 点击 🟩 绿色旗帜</p>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：小猫移动</div>
+    <div class="demo-stage">
+        <div class="scratch-demo">
+            <div class="scratch-cat" id="catMove" style="left:40px;bottom:40px;font-size:3em;animation:catWalk 2s ease-in-out infinite">🐱</div>
+            <div class="scratch-blocks" style="top:8px;bottom:auto">
+                <span class="scratch-block sb-event">当🏁被点击</span>
+                <span class="scratch-block sb-motion">移动10步</span>
+            </div>
+        </div>
+    </div>
+</div>
+<style>@keyframes catWalk{0%{left:40px}50%{left:250px}100%{left:40px}}</style>
+<div class="sec"><div class="sec-t">📐 数学：坐标和方向</div>
+<div class="tip"><strong>x坐标</strong>：小猫的水平位置。向右移动，x增加。<br><strong>y坐标</strong>：小猫的垂直位置。向上移动，y增加。<br>Scratch的舞台宽480、高360，中心是(0,0)。所以x范围是-240到240，y范围是-180到180。</div></div>`},
+        {title:'做一个接球游戏',auto:true,
+        verify:{id:'v3_scratch_file',label:'有Scratch项目文件（.sb3）',hint:'在Scratch中保存项目，下载.sb3文件到作品集文件夹'},
+        subjects:['📐 数学','🖥️ 信息科技'],
+        content:`
+<p><strong>游戏规则</strong>：球从天上掉下来，你用小猫接住它！</p>
+<p>1. 添加一个球的角色</p>
+<p>2. 给球添加代码：</p>
+<div class="code"><span class="lbl">Scratch积木</span>
+当绿旗被点击
+重复执行
+    移到 x:(随机数 -200 到 200) y:(180)
+    重复执行直到 &lt;y坐标 &lt; -170&gt;
+        将y坐标增加 -5
+        如果 &lt;碰到 小猫 ?&gt; 那么
+            将 分数 增加 1
+            移到 x:(随机数 -200 到 200) y:(180)
+        end
+    end
+    将 分数 增加 -1</div>
+<p>3. 创建一个"分数"变量</p>
+<div class="ai"><span class="ai-i">🤖</span><div class="ai-t">卡住了？问Claude：<strong>"我在Scratch里做接球游戏，球的代码怎么写？请用Scratch积木的方式告诉我"</strong></div></div>
+<div class="tip ok">💾 完成后，点击"文件" → "保存到电脑"，把.sb3文件保存到 <code>~/kids-creator-hub/作品集/</code></div>
+<div class="sec"><div class="sec-t">📐 数学：随机数</div>
+<div class="tip"><strong>随机数</strong>：<code>随机数 -200 到 200</code> 会生成一个-200到200之间的随机数。每次球出现的位置都不同！这就是概率。如果你扔一个骰子，出现1到6的概率各是1/6 ≈ 16.7%。</div></div>`},
+        {title:'美化并分享',auto:false,
+        verify:{id:'v3_shared',label:'分享给家人玩过（人工确认）',hint:'把游戏分享给家人朋友玩了吗？'},
+        subjects:['🎨 艺术','🗣️ 沟通表达'],
+        content:`
+<p>🎨 换背景 · 🎵 加音效 · 🖼️ 换角色</p>
+<p>做完后，点击"分享"，把链接发给家人！</p>
+<div class="sec"><div class="sec-t">🎨 艺术：色彩搭配</div>
+<div class="tip"><strong>色彩</strong>：好的游戏界面需要配色协调。试试用<strong>对比色</strong>（红-绿、蓝-橙）让重点突出，用<strong>相近色</strong>（蓝-紫、红-橙）让画面和谐。Scratch里换背景时可以试试不同颜色的搭配效果！</div></div>`}
+    ]
+},
+{
+    id:4, icon:'🎬', title:'第一个视频', time:'周末2小时', difficulty:'基础', xp:200,
+    desc:'录制并剪辑一个2分钟的视频！把你做的游戏展示给别人看。',
+    subjects:['🎬 媒体素养','📝 语文','🗣️ 沟通表达'],
+    steps:[
+        {title:'写视频脚本',auto:true,
+        verify:{id:'v4_script',label:'有视频脚本文件',hint:'在作品集创建"视频脚本.txt"'},
+        subjects:['📝 语文'],
+        content:`
+<p>好视频需要有结构。在 <code>作品集/视频脚本.txt</code> 写：</p>
+<div class="code"><span class="lbl">脚本模板</span>
+【开头】（10秒）
+"大家好，我是XX，今天我要展示我用Scratch做的游戏。"
+
+【介绍】（30秒）
+"这是一个接球游戏，玩家控制小猫接住从天上掉下来的球。"
+
+【演示】（60秒）
+一边玩一边解说。
+
+【结尾】（20秒）
+"这就是我做的第一个游戏！谢谢观看！"</div>
+<div class="sec"><div class="sec-t">📝 语文：文章结构</div>
+<div class="tip"><strong>总-分-总</strong>：好的文章和视频都有"总-分-总"结构。开头总说（介绍主题），中间分述（具体内容），结尾总结（回顾要点）。写作文也是一样的道理！</div></div>`},
+        {title:'用OBS录制屏幕',auto:true,
+        verify:{id:'v4_video',label:'有视频文件（≥30秒）',hint:'用OBS录制屏幕，保存视频到桌面或作品集'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('open -a OBS')">🚀 打开OBS</a></div>
+<p>录制步骤：来源 → + → 屏幕捕获 → 开始录制 → 演示游戏 → 停止录制</p>
+<div class="sec"><div class="sec-t">🔬 科学：帧率</div>
+<div class="tip"><strong>帧率(FPS)</strong>：视频每秒播放多少张图片。30FPS=每秒30张，60FPS=每秒60张。帧率越高越流畅，但文件也越大。一般录屏用30FPS就够了，游戏视频用60FPS更流畅。</div></div>`},
+        {title:'用CapCut剪辑',auto:false,
+        verify:{id:'v4_edited',label:'用CapCut剪辑过（人工确认）',hint:'用CapCut剪辑过视频吗？加过字幕或音乐吗？'},
+        subjects:['🎬 媒体素养','🎨 艺术'],
+        content:`
+<div class="qbtns"><a class="qbtn pri" href="https://www.capcut.com" target="_blank">📥 下载CapCut</a></div>
+<p>✂️ 剪掉废话 → 📝 加字幕 → 🎵 加音乐 → 📤 导出1080p</p>`}
+    ]
+},
+{
+    id:5, icon:'✍️', title:'第一个AI写作', time:'周末1-2小时', difficulty:'基础', xp:200,
+    desc:'跟AI合作写一个500字以上的完整故事！',
+    subjects:['📝 语文','🖥️ 信息科技'],
+    steps:[
+        {title:'确定故事类型并设计大纲',auto:false,
+        verify:{id:'v5_outline',label:'设计过故事大纲（人工确认）',hint:'跟AI一起设计过故事大纲吗？'},
+        subjects:['📝 语文','🧠 逻辑思维'],
+        content:`
+<p>故事类型：🗡️冒险 · 🔍侦探 · 🚀科幻 · 🧙魔法 · 🏫校园</p>
+<div class="code"><span class="claude">对话</span><button class="cp" onclick="copyCode(this)">复制</button>
+我想写一个[冒险]类型的故事。
+主角是一个[勇敢的小男孩]。
+请帮我设计一个故事大纲，要有开头、中间、结局。</div>
+<div class="sec"><div class="sec-t">📝 语文：故事六要素</div>
+<div class="tip"><strong>时间、地点、人物、起因、经过、结果</strong>——这是记叙文六要素。写任何故事都要想清楚这6个点。比如："从前（时间），在森林里（地点），一个小男孩（人物）迷路了（起因），他勇敢地找到了回家的路（经过），最后安全回到了家（结果）。"</div></div>`},
+        {title:'写故事并保存',auto:true,
+        verify:{id:'v5_story_file',label:'有故事文件（≥500字）',hint:'在作品集创建"我的故事.txt"，写500字以上'},
+        subjects:['📝 语文','🗣️ 沟通表达'],
+        content:`
+<p>在 <code>作品集/我的故事.txt</code> 中写故事。你写一段，AI帮你改一段：</p>
+<div class="code"><span class="claude">对话</span><button class="cp" onclick="copyCode(this)">复制</button>
+这是我写的开头：
+小明走进了森林，他很害怕，但是他知道他必须勇敢。
+请帮我看看有什么可以改进的地方，让语言更生动。</div>
+<div class="tip ok">💾 写完后保存到 <code>作品集/我的故事.txt</code>，系统会自动检测字数。</div>
+<div class="sec"><div class="sec-t">🔤 英语：story vs tale</div>
+<div class="tip"><strong>Story</strong> 是故事的统称。<strong>Tale</strong> 通常指传说或童话（如 fairy tale 童话故事）。还有 <strong>novel</strong>（长篇小说）、<strong>short story</strong>（短篇小说）。你写的是 short story！</div></div>`}
+    ]
+},
+{
+    id:6, icon:'🎯', title:'狼人杀游戏', time:'2-3个周末', difficulty:'进阶', xp:300,
+    desc:'用Scratch做一个狼人杀游戏！',
+    subjects:['🖥️ 信息科技','🧠 逻辑思维','🗣️ 沟通表达'],
+    steps:[
+        {title:'画游戏流程图并保存',auto:true,
+        verify:{id:'v6_flowchart',label:'有流程图或设计文档',hint:'在作品集保存流程图或设计文档'},
+        subjects:['🧠 逻辑思维','📝 语文'],
+        content:`
+<p>先在纸上画出游戏流程，然后拍照保存到作品集，或写一个设计文档。</p>
+<div class="sec"><div class="sec-t">🧠 逻辑思维：流程图</div>
+<div class="tip"><strong>流程图</strong>是程序员最重要的工具之一。它用图形表示程序的执行顺序：开始→步骤→判断→分支→结束。这跟你数学课学的"解题步骤"是一样的思路——把复杂问题分解成简单的步骤。</div></div>`},
+        {title:'实现并保存项目',auto:true,
+        verify:{id:'v6_scratch_file',label:'有狼人杀Scratch项目',hint:'把项目保存为"狼人杀.sb3"到作品集'},
+        subjects:['🖥️ 信息科技','🧠 逻辑思维'],
+        content:`
+<p>在Scratch中实现：角色分配 → 天黑天亮 → 投票 → 判断胜负</p>
+<div class="ai"><span class="ai-i">🤖</span><div class="ai-t">每个步骤都可以问Claude：<strong>"我在Scratch做狼人杀，怎么实现角色分配？"</strong></div></div>
+<div class="tip ok">💾 保存为 <code>作品集/狼人杀.sb3</code></div>
+<div class="sec"><div class="sec-t">🧠 逻辑思维：条件判断</div>
+<div class="tip"><strong>如果...那么...否则...</strong> 这是编程最核心的逻辑。狼人杀里到处都是条件判断：如果狼人选择的目标是预言家，那么预言家出局；否则普通村民出局。这种"条件→结果"的思维模式，也是数学证明和科学实验的基础。</div></div>`},
+        {title:'能跟电脑玩一局',auto:false,
+        verify:{id:'v6_playable',label:'能跟电脑玩一局（人工确认）',hint:'你能跟电脑玩一局狼人杀吗？'},
+        content:`
+<p>找家人朋友一起测试你的游戏！</p>`}
+    ]
+},
+{
+    id:7, icon:'🐍', title:'Python入门', time:'每周末2小时×3周', difficulty:'进阶', xp:300,
+    desc:'用Python画图和做简单游戏！这是真正的编程语言。',
+    subjects:['🖥️ 信息科技','📐 数学'],
+    steps:[
+        {title:'写第一行Python代码',auto:true,
+        verify:{id:'v7_hello',label:'有hello.py文件',hint:'创建hello.py，写上 print("你好")'},
+        subjects:['🖥️ 信息科技','🔤 英语'],
+        content:`
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('code')">🚀 打开VS Code</a></div>
+<p>创建 <code>hello.py</code>：</p>
+<div class="code"><span class="lbl">Python</span><button class="cp" onclick="copyCode(this)">复制</button>
+print("你好，世界！")
+name = input("你叫什么名字？")
+print("你好，" + name + "！")</div>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：Python运行过程</div>
+    <div class="demo-stage">
+        <div class="term-demo">
+            <div class="term-line" style="animation-delay:.3s"><span class="out">你好，世界！</span></div>
+            <div class="term-line" style="animation-delay:.8s"><span class="out">你叫什么名字？</span><span class="cmd" style="color:var(--warning)">小明</span></div>
+            <div class="term-line" style="animation-delay:1.5s"><span class="out">你好，小明！</span></div>
+        </div>
+    </div>
+</div>
+<div class="sec"><div class="sec-t">🔤 英语：Python关键字</div>
+<div class="tip"><strong>print</strong> = 打印/显示，<strong>input</strong> = 输入，<strong>if</strong> = 如果，<strong>else</strong> = 否则，<strong>while</strong> = 当...时候，<strong>for</strong> = 对于。这些英语单词就是Python的"魔法咒语"！学好英语，编程会更容易。</div></div>`},
+        {title:'用turtle画彩色图案',auto:true,
+        verify:{id:'v7_turtle',label:'有turtle画图作品',hint:'创建turtle画图作品，保存到作品集'},
+        subjects:['📐 数学','🎨 艺术'],
+        content:`
+<div class="code"><span class="lbl">Python</span><button class="cp" onclick="copyCode(this)">复制</button>
+import turtle
+t = turtle.Turtle()
+t.speed(3)
+colors = ["red", "yellow", "blue", "green", "purple", "orange"]
+for color in colors:
+    t.color(color)
+    t.circle(50)
+    t.right(60)
+turtle.done()</div>
+<div class="demo">
+    <div class="demo-title">🎬 动画演示：turtle画图</div>
+    <div class="demo-stage" style="display:flex;align-items:center;justify-content:center">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="50" r="40" fill="none" stroke="#e17055" stroke-width="2" class="turtle-path"/>
+            <circle cx="143" cy="75" r="40" fill="none" stroke="#fdcb6e" stroke-width="2" class="turtle-path" style="animation-delay:.5s"/>
+            <circle cx="143" cy="125" r="40" fill="none" stroke="#00b894" stroke-width="2" class="turtle-path" style="animation-delay:1s"/>
+            <circle cx="100" cy="150" r="40" fill="none" stroke="#6c5ce7" stroke-width="2" class="turtle-path" style="animation-delay:1.5s"/>
+            <circle cx="57" cy="125" r="40" fill="none" stroke="#a29bfe" stroke-width="2" class="turtle-path" style="animation-delay:2s"/>
+            <circle cx="57" cy="75" r="40" fill="none" stroke="#fd79a8" stroke-width="2" class="turtle-path" style="animation-delay:2.5s"/>
+        </svg>
+    </div>
+</div>
+<div class="sec"><div class="sec-t">📐 数学：正六边形和角度</div>
+<div class="tip"><strong>为什么转60度？</strong> 正六边形的每个内角是120°，外角是60°。360° ÷ 60° = 6，刚好画6个圆组成花朵。这就是数学在编程中的应用！试试改成 <code>t.right(72)</code>，360÷72=5，会画出5个圆的花朵。</div></div>`},
+        {title:'做猜数字游戏',auto:true,
+        verify:{id:'v7_game',label:'有Python游戏作品',hint:'创建猜数字或文字冒险游戏，保存到作品集'},
+        subjects:['🖥️ 信息科技','📐 数学'],
+        content:`
+<div class="code"><span class="lbl">Python</span><button class="cp" onclick="copyCode(this)">复制</button>
+import random
+secret = random.randint(1, 100)
+attempts = 0
+print("我想了一个1到100的数字，你猜猜看！")
+while True:
+    guess = int(input("你的猜测："))
+    attempts += 1
+    if guess < secret:
+        print("太小了！")
+    elif guess > secret:
+        print("太大了！")
+    else:
+        print("恭喜！你用了" + str(attempts) + "次猜对。")
+        break</div>
+<div class="sec"><div class="sec-t">📐 数学：二分查找</div>
+<div class="tip"><strong>最优策略</strong>：1-100的数字，用二分法（每次猜中间值）最多只需要7次就能猜对！因为 2^7 = 128 > 100。这个策略叫"二分查找"，是计算机科学最重要的算法之一。试试：第1次猜50，第2次猜25或75...</div></div>`}
+    ]
+},
+{
+    id:8, icon:'🎮', title:'Godot游戏引擎', time:'3-4个周末', difficulty:'进阶', xp:400,
+    desc:'用专业游戏引擎做真正的游戏！',
+    subjects:['🖥️ 信息科技','📐 数学','🎨 艺术','🔬 科学'],
+    steps:[
+        {title:'打开Godot并创建项目',auto:true,
+        verify:{id:'v8_godot',label:'Godot已安装',hint:'确认Godot已安装'},
+        content:`
+<div class="qbtns"><a class="qbtn pri" onclick="runCmd('open -a Godot')">🚀 打开Godot</a></div>
+<p>新建项目 → 名称"我的弹球游戏" → 创建并编辑</p>`},
+        {title:'创建球和挡板',auto:true,
+        verify:{id:'v8_project',label:'有Godot项目',hint:'创建Godot项目保存到作品集'},
+        subjects:['📐 数学'],
+        content:`
+<p>添加 Ball（CharacterBody2D）和 Paddle（StaticBody2D）</p>
+<div class="sec"><div class="sec-t">📐 数学：向量</div>
+<div class="tip"><strong>Vector2(1, 1)</strong> 是一个二维向量，表示方向。Vector2(1, 1) 表示向右下方移动。向量在游戏开发中无处不在——角色移动、物理碰撞、射击方向都要用到。它其实就是坐标系里的"箭头"。</div></div>`},
+        {title:'让球动起来',auto:true,
+        verify:{id:'v8_script',label:'写过GDScript代码',hint:'在Godot项目中创建脚本文件'},
+        subjects:['🖥️ 信息科技','🔬 科学'],
+        content:`
+<div class="code"><span class="lbl">GDScript</span><button class="cp" onclick="copyCode(this)">复制</button>
+extends CharacterBody2D
+var speed = 200.0
+var direction = Vector2(1, 1).normalized()
+func _physics_process(delta):
+    velocity = direction * speed
+    var collision = move_and_collide(velocity * delta)
+    if collision:
+        direction = direction.bounce(collision.get_normal())</div>
+<div class="sec"><div class="sec-t">🔬 科学：物理反弹</div>
+<div class="tip"><strong>反弹定律</strong>：球碰到墙壁反弹，遵循"入射角=反射角"的物理定律。<code>collision.get_normal()</code> 获取的是碰撞面的法线方向（垂直于墙面的方向），<code>bounce()</code> 就是根据法线计算反弹方向。这跟光的反射定律一样！</div></div>`},
+        {title:'添加砖块、分数和导出',auto:false,
+        verify:{id:'v8_playable',label:'游戏能玩（人工确认）',hint:'你的Godot游戏能玩吗？'},
+        content:`
+<p>添加砖块 → 检测碰撞 → 显示分数 → 导出游戏</p>
+<div class="ai"><span class="ai-i">🤖</span><div class="ai-t">问Claude：<strong>"在Godot里怎么做弹球游戏的砖块击中消失和得分功能？"</strong></div></div>`}
+    ]
+},
+{
+    id:9, icon:'🎥', title:'视频进阶', time:'2个周末', difficulty:'进阶', xp:350,
+    desc:'制作一个5分钟的教学视频，教别人你学到的东西！',
+    subjects:['🎬 媒体素养','📝 语文','🗣️ 沟通表达'],
+    steps:[
+        {title:'写教学视频脚本',auto:true,
+        verify:{id:'v9_script',label:'有教学视频脚本',hint:'在作品集创建"教学视频脚本.txt"'},
+        subjects:['📝 语文'],
+        content:`
+<p>选一个你学会的东西来教别人，写脚本到 <code>作品集/教学视频脚本.txt</code></p>
+<div class="sec"><div class="sec-t">📝 语文：说明文</div>
+<div class="tip"><strong>说明文</strong>是用来解释事物的文章。写教学脚本就是写说明文，要有：①明确的主题 ②清晰的步骤 ③具体的例子 ④适当的总结。顺序词（首先、然后、最后）能让内容更有条理。</div></div>`},
+        {title:'录制5分钟以上视频',auto:true,
+        verify:{id:'v9_video',label:'有5分钟以上的视频',hint:'录制一个5分钟以上的教学视频'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<p>用OBS录制屏幕操作，边操作边解说。</p>`},
+        {title:'发布并分享',auto:false,
+        verify:{id:'v9_shared',label:'发布或分享过（人工确认）',hint:'把视频发给家人或上传到B站了吗？'},
+        subjects:['🗣️ 沟通表达'],
+        content:`
+<p>📺 上传到B站 · 📱 分享给家人 · 🎮 让同学看看</p>`}
+    ]
+},
+{
+    id:10, icon:'🚀', title:'独立项目', time:'4-6个周末', difficulty:'挑战', xp:500,
+    desc:'独立完成一个完整项目！从学习者变成创造者。',
+    subjects:['🖥️ 信息科技','🧠 逻辑思维','🗣️ 沟通表达'],
+    steps:[
+        {title:'写项目计划书',auto:true,
+        verify:{id:'v10_plan',label:'有项目计划书',hint:'在作品集创建"项目计划书.txt"'},
+        subjects:['📝 语文','🧠 逻辑思维'],
+        content:`
+<p>在 <code>作品集/项目计划书.txt</code> 写计划：</p>
+<div class="code"><span class="lbl">模板</span>
+【项目名称】：__________
+【项目目标】：我要做一个__________
+【需要的技能】：__________
+【时间安排】：第1周__，第2周__...
+【可能的困难】：__________ → 解决方法：__________</div>
+<div class="sec"><div class="sec-t">🧠 逻辑思维：项目管理</div>
+<div class="tip"><strong>PDCA循环</strong>：Plan（计划）→ Do（执行）→ Check（检查）→ Act（改进）。这是全世界最流行的项目管理方法。你写计划书就是Plan，做项目就是Do，测试就是Check，改进就是Act。</div></div>`},
+        {title:'完成项目并保存作品',auto:true,
+        verify:{id:'v10_project',label:'作品集有≥3个作品文件',hint:'在作品集中至少有3个作品文件'},
+        subjects:['🖥️ 信息科技'],
+        content:`
+<p>按计划做项目，保存所有作品到 <code>作品集/</code></p>
+<div class="ai"><span class="ai-i">🤖</span><div class="ai-t">卡住了？问Claude：<strong>"我在做[项目]，遇到了[问题]，请帮我分析并给解决方案"</strong></div></div>`},
+        {title:'做产品发布会',auto:false,
+        verify:{id:'v10_present',label:'做过项目展示（人工确认）',hint:'你给家人做过项目展示吗？'},
+        subjects:['🗣️ 沟通表达','🎬 媒体素养'],
+        content:`
+<p>给家人做一次"产品发布会"：讲解你的项目 → 让他们体验 → 收集反馈</p>
+<div class="tip ok">🏆 恭喜！完成这一关，你就是一个真正的创客了！</div>`}
+    ]
+}
+];
+
+// ==================== STATE ====================
+let S = loadS();
+let cur = null;
+let verifyResults = {};
+
+function loadS(){try{return JSON.parse(localStorage.getItem('kh-s'))||{done:{},steps:{},xp:0}}catch{return{done:{},steps:{},xp:0}}}
+function saveS(){localStorage.setItem('kh-s',JSON.stringify(S))}
+
+// ==================== STARS ====================
+(function(){const c=document.getElementById('stars');for(let i=0;i<60;i++){const s=document.createElement('div');s.className='star';const z=Math.random()*2.5+1;s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${Math.random()*3+2}s;animation-delay:${Math.random()*3}s`;c.appendChild(s)}})();
+
+// ==================== VERIFY ====================
+async function verifyLevel(id){
+    try{
+        sndVerify();
+        const r=await fetch(`http://localhost:18088/verify?level=${id}`);
+        const data=await r.json();
+        verifyResults[id]=data;
+        if(data.summary&&data.summary.allAutoPassed) sndVerifyPass();
+        else if(data.summary&&data.summary.autoPassed>0) sndVerifyPass();
+        renderMap();
+        if(cur===id) renderLevel(id);
+        return data;
+    }catch{
+        // server not running, fallback to local-only
+        verifyResults[id]={error:'server_offline'};
+        renderMap();
+        return null;
+    }
+}
+
+async function refreshAll(){
+    showToastI('🔄','正在验证所有关卡...');
+    for(let i=1;i<=10;i++) await verifyLevel(i);
+    showToastI('✅','验证完成！');
+    sndVerifyPass();
+    updateStats();
+}
+
+function getVerifyStatus(id){
+    const r=verifyResults[id];
+    if(!r||r.error) return 'unknown';
+    if(r.summary&&r.summary.allAutoPassed) return 'ok';
+    if(r.summary&&r.summary.autoPassed>0) return 'partial';
+    return 'none';
+}
+
+// ==================== RENDER MAP ====================
+function renderMap(){
+    const m=document.getElementById('map');
+    m.innerHTML=L.map(l=>{
+        const d=S.done[l.id];
+        const sk=`l${l.id}`;
+        const done=l.steps.filter((_,i)=>S.steps[`${sk}s${i}`]).length;
+        const tot=l.steps.length;
+        const vs=getVerifyStatus(l.id);
+        const vdot=vs==='ok'?'ok':vs==='partial'?'partial':'none';
+        return`<div class="lvl ${cur===l.id?'on':''} ${d?'done':''}" onclick="selectLevel(${l.id})">
+            <div class="ico" style="background:${d?'rgba(0,184,148,.18)':'rgba(108,92,231,.12)'}">
+                ${l.icon}${d?'<div class="badge">✓</div>':''}
+            </div>
+            <div class="info"><div class="t">${l.title}</div><div class="s">${done}/${tot}步骤 · ${l.time}</div></div>
+            <div class="verify-dot ${vdot}"></div>
+        </div>`;
+    }).join('');
+}
+
+// ==================== RENDER LEVEL ====================
+function selectLevel(id){
+    cur=id;
+    const l=L.find(x=>x.id===id);
+    const a=document.getElementById('content');
+    const sk=`l${id}`;
+    const vr=verifyResults[id];
+    sndExpand();
+
+    a.innerHTML=`
+    <div class="hdr">
+        <div class="bc">关卡 ${l.id}/${L.length}</div>
+        <h1>${l.icon} ${l.title}</h1>
+        <div class="desc">${l.desc}</div>
+        <div class="chips">
+            <span class="chip">⏰ ${l.time}</span>
+            <span class="chip">📊 ${l.difficulty}</span>
+            <span class="chip">⭐ ${l.xp} XP</span>
+            ${l.subjects.map(s=>`<span class="chip">${s}</span>`).join('')}
+        </div>
+    </div>
+
+    <div class="sec">
+        <div class="sec-t">📋 任务步骤 <span style="font-size:.75em;color:var(--dim);font-weight:400">（绿色=系统自动验证，蓝色=人工确认）</span></div>
+        ${l.steps.map((st,i)=>{
+            const k=`${sk}s${i}`;
+            const done=S.steps[k];
+            // check verify result
+            let vResult=null;
+            if(vr&&vr.results) vResult=vr.results.find(r=>r.id===st.verify.id);
+            const autoPassed=vResult?vResult.passed:false;
+            const isDone=done||autoPassed;
+
+            return`<div class="step ${isDone?'done':''} ${cur===id&&i===0?'expanded':''}" id="st${i}">
+                <div class="step-h" onclick="toggleStep(${i})">
+                    <div class="step-chk ${autoPassed?'auto-ok':''} ${done&&!autoPassed?'manual-ok':''}" onclick="event.stopPropagation();toggleStepDone(${id},${i})">
+                        ${isDone?'✓':''}
+                    </div>
+                    <div class="step-num">${i+1}</div>
+                    <div class="step-t">${st.title}</div>
+                    ${st.subjects?st.subjects.map(s=>`<span class="subject ${s.includes('数学')?'math':s.includes('语文')?'chinese':s.includes('英语')?'english':s.includes('科学')?'science':s.includes('艺术')?'art':''}">${s}</span>`).join(''):''}
+                    <span class="step-tag ${st.auto?'auto':'manual'}">${st.auto?'🤖自动':'🔘人工'}</span>
+                    <div class="step-arrow">▶</div>
+                </div>
+                <div class="step-b">
+                    ${renderVerifyBar(st,autoPassed,done)}
+                    ${st.content}
+                </div>
+            </div>`;
+        }).join('')}
+    </div>
+
+    <div class="done-sec">
+        <button class="done-btn ${S.done[id]?'completed':''}" onclick="completeLvl(${id})">
+            ${S.done[id]?'✅ 已完成！（点击取消）':'🏆 完成本关，领取成就！'}
+        </button>
+    </div>`;
+
+    renderMap();
+    updateStats();
+    a.scrollTop=0;
+}
+
+function renderVerifyBar(st,autoPassed,manualDone){
+    const v=st.verify;
+    if(st.auto){
+        if(autoPassed){
+            return`<div class="verify-bar ok"><span class="v-icon">✅</span><span class="v-text">${v.label}</span><span style="color:var(--success);font-size:.85em">已通过</span></div>`;
+        }else{
+            return`<div class="verify-bar fail"><span class="v-icon">❌</span><span class="v-text">${v.label}</span><button class="v-btn check" onclick="verifyLevel(${cur})">🔍 检测</button></div>`;
+        }
+    }else{
+        if(manualDone){
+            return`<div class="verify-bar ok"><span class="v-icon">✅</span><span class="v-text">${v.label}</span><span style="color:var(--info);font-size:.85em">已确认</span></div>`;
+        }else{
+            return`<div class="verify-bar pending"><span class="v-icon">🔘</span><span class="v-text">${v.hint}</span><button class="v-btn check" onclick="toggleStepDone(${cur},${L.find(x=>x.id===cur).steps.indexOf(st)})">确认完成</button></div>`;
+        }
+    }
+}
+
+// ==================== INTERACTIONS ====================
+function toggleStep(i){
+    const el=document.getElementById(`st${i}`);
+    const wasExpanded=el.classList.contains('expanded');
+    el.classList.toggle('expanded');
+    wasExpanded?sndCollapse():sndExpand();
+}
+
+function toggleStepDone(lid,si){
+    const k=`l${lid}s${si}`;
+    S.steps[k]=!S.steps[k];
+    saveS();
+    selectLevel(lid);
+    if(S.steps[k]){showToastI('✅','步骤完成！');sndStepDone();sndXpUp();}
+}
+
+function completeLvl(id){
+    const l=L.find(x=>x.id===id);
+    if(S.done[id]){delete S.done[id];S.xp-=l.xp}
+    else{S.done[id]=true;S.xp+=l.xp;sndLevelDone();showToastI('🎉',`完成！获得 ${l.xp} XP`);fireConfetti();setTimeout(sndXpUp,400)}
+    saveS();selectLevel(id);updateStats();
+}
+
+function copyCode(btn){
+    const t=btn.parentElement.textContent.replace('复制','').replace(/^[^\n]*\n/,'').trim();
+    navigator.clipboard.writeText(t).then(()=>{btn.textContent='已复制!';sndCopy();setTimeout(()=>btn.textContent='复制',1200)});
+}
+
+function runCmd(cmd){showToastI('💡',`请在终端输入: ${cmd}`)}
+
+// ==================== STATS ====================
+function updateStats(){
+    const c=Object.keys(S.done).length;
+    const mx=L.reduce((a,l)=>a+l.xp,0);
+    document.getElementById('xp').textContent=S.xp;
+    document.getElementById('badges').textContent=c;
+    document.getElementById('works').textContent=Object.keys(S.steps).filter(k=>S.steps[k]).length;
+    document.getElementById('xpF').style.width=`${Math.min(100,S.xp/mx*100)}%`;
+    document.getElementById('xpL').textContent=`${S.xp} / ${mx} XP`;
+}
+
+// ==================== SOUND EFFECTS (Web Audio API) ====================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new AudioCtx();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+// 基础音符播放
+function playTone(freq, duration, type='sine', volume=0.15, delay=0) {
+    const ctx = ensureAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(volume, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + duration);
+}
+
+// 🔔 步骤完成 - 清脆上升叮咚
+function sndStepDone() {
+    playTone(523, 0.12, 'sine', 0.15);      // C5
+    playTone(659, 0.12, 'sine', 0.15, 0.1);  // E5
+    playTone(784, 0.2, 'sine', 0.18, 0.2);   // G5
+}
+
+// 🏆 关卡完成 - 欢快胜利小旋律
+function sndLevelDone() {
+    const notes = [523, 587, 659, 784, 880, 1047]; // C5 D5 E5 G5 A5 C6
+    notes.forEach((n, i) => {
+        playTone(n, 0.18, 'sine', 0.12, i * 0.1);
+        playTone(n * 0.5, 0.18, 'triangle', 0.06, i * 0.1); // 低音和声
+    });
+    // 尾部和弦
+    setTimeout(() => {
+        playTone(523, 0.4, 'sine', 0.1);
+        playTone(659, 0.4, 'sine', 0.1);
+        playTone(784, 0.4, 'sine', 0.1);
+    }, 650);
+}
+
+// 📋 复制代码 - 轻快点击
+function sndCopy() {
+    playTone(880, 0.06, 'square', 0.06);
+    playTone(1320, 0.08, 'square', 0.05, 0.05);
+}
+
+// ▶️ 展开/折叠步骤 - 柔和滑音
+function sndExpand() {
+    const ctx = ensureAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+}
+function sndCollapse() {
+    const ctx = ensureAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+}
+
+// 🔍 验证检测 - 科技扫描音
+function sndVerify() {
+    for (let i = 0; i < 5; i++) {
+        playTone(400 + i * 150, 0.06, 'sawtooth', 0.04, i * 0.07);
+    }
+}
+
+// ✅ 验证通过 - 愉快确认
+function sndVerifyPass() {
+    playTone(659, 0.1, 'sine', 0.12);
+    playTone(784, 0.1, 'sine', 0.12, 0.1);
+    playTone(988, 0.2, 'sine', 0.15, 0.2);
+}
+
+// ❌ 验证失败 - 温和提示
+function sndVerifyFail() {
+    playTone(330, 0.15, 'triangle', 0.1);
+    playTone(262, 0.2, 'triangle', 0.1, 0.12);
+}
+
+// 🎉 撒花 - 欢庆上升音阶
+function sndConfetti() {
+    const notes = [262, 330, 392, 523, 659, 784, 1047];
+    notes.forEach((n, i) => {
+        playTone(n, 0.15, 'sine', 0.08, i * 0.06);
+        playTone(n * 1.5, 0.1, 'triangle', 0.04, i * 0.06 + 0.02);
+    });
+}
+
+// 💡 Toast通知 - 轻柔提示
+function sndToast() {
+    playTone(698, 0.08, 'sine', 0.08);
+    playTone(880, 0.12, 'sine', 0.1, 0.06);
+}
+
+// 🔘 按钮悬停 - 微妙反馈
+function sndHover() {
+    playTone(1200, 0.03, 'sine', 0.03);
+}
+
+// ⬆️ XP增加 - 上升音
+function sndXpUp() {
+    const ctx = ensureAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+}
+
+// 🎵 启动欢迎音 - 温暖的问候旋律
+function sndWelcome() {
+    const notes = [392, 523, 659, 784]; // G4 C5 E5 G5
+    notes.forEach((n, i) => {
+        playTone(n, 0.25, 'sine', 0.08, i * 0.15);
+    });
+}
+
+// 音效开关
+let soundOn = true;
+function toggleSound() {
+    soundOn = !soundOn;
+    const btn = document.getElementById('soundBtn');
+    btn.textContent = soundOn ? '🔊 音效' : '🔇 静音';
+    if (soundOn) sndCopy();
+}
+// 包装所有音效函数，检查开关状态
+const _origPlayTone = playTone;
+playTone = function(freq, duration, type, volume, delay) {
+    if (!soundOn) return;
+    _origPlayTone(freq, duration, type, volume, delay);
+};
+
+// ==================== EFFECTS ====================
+function showToastI(icon,text){
+    const t=document.getElementById('toast');
+    document.getElementById('toastI').textContent=icon;
+    document.getElementById('toastT').textContent=text;
+    t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);
+    sndToast();
+}
+
+function fireConfetti(){
+    const c=document.getElementById('confetti');c.innerHTML='';
+    const cols=['#6c5ce7','#a29bfe','#fd79a8','#fdcb6e','#00b894','#74b9ff','#e17055'];
+    for(let i=0;i<50;i++){const p=document.createElement('div');p.className='c-piece';p.style.cssText=`left:${Math.random()*100}%;background:${cols[i%7]};--d:${Math.random()*2+1.5}s;animation-delay:${Math.random()*.4}s;border-radius:${Math.random()>.5?'50%':'2px'};width:${Math.random()*7+5}px;height:${Math.random()*7+5}px`;c.appendChild(p)}
+    setTimeout(()=>c.innerHTML='',3500);
+    sndConfetti();
+}
+
+// ==================== INIT ====================
+renderMap();updateStats();
+// auto-verify on load (silent)
+setTimeout(()=>{for(let i=1;i<=10;i++)verifyLevel(i)},500);
+
+// 按钮悬停音效（仅对.qbtn和.done-btn生效，限制触发频率）
+let hoverCooldown = false;
+document.addEventListener('mouseover', function(e) {
+    if (hoverCooldown) return;
+    const btn = e.target.closest('.qbtn, .done-btn');
+    if (!btn) return;
+    hoverCooldown = true;
+    sndHover();
+    setTimeout(() => hoverCooldown = false, 100);
+});
+
+// 首次交互时播放欢迎音（浏览器要求用户交互后才能播放音频）
+let welcomePlayed = false;
+document.addEventListener('click', function playWelcomeOnce() {
+    if (welcomePlayed) return;
+    welcomePlayed = true;
+    sndWelcome();
+    document.removeEventListener('click', playWelcomeOnce);
+}, { once: true });
+</script>
+</body>
+</html>
